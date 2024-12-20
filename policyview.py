@@ -73,4 +73,6 @@ class OnnxPolicyPlayer:
 
 # 推論クラス
 player = OnnxPolicyPlayer(modelfile)
+
+#局面情報の推定選択率を表示
 print(player.move_infer_choice(board))
