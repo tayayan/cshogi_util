@@ -1,3 +1,4 @@
+#やねうら王教師局面の評価値をdlshogiモデルのvalueに書き換えるプログラム
 import numpy as np
 from cshogi import *
 from cshogi.dlshogi import make_input_features, make_move_label, FEATURES1_NUM, FEATURES2_NUM
@@ -45,18 +46,18 @@ def value_to_eval(value):
 #PSV読み込み 1億局面×80回
 a = 0
 while a != 80:
-    psvs = np.fromfile("psv.bin", count=100000000, offset=100000000*a*40, dtype=PackedSfenValue)
-    hcps = np.zeros(len(psvs), dtype=PackedSfenValue)
+    psva = np.fromfile("psv.bin", count=100000000, offset=100000000*a*40, dtype=PackedSfenValue)
+    psvb = np.zeros(len(psva), dtype=PackedSfenValue)
     scores = np.array([], dtype=np.float32)
 
     j = 0
     for i in range(100000000):
-        hcps[i]["sfen"] = psvs[i]["sfen"]
-        hcps[i]["move"] = psvs[i]["move"]
-        hcps[i]["gamePly"] = psvs[i]["gamePly"]
-        hcps[i]["game_result"] = psvs[i]["game_result"]
+        psvb[i]["sfen"] = psva[i]["sfen"]
+        psvb[i]["move"] = psva[i]["move"]
+        psvb[i]["gamePly"] = psva[i]["gamePly"]
+        psvb[i]["game_result"] = psva[i]["game_result"]
         
-        board.set_psfen(psvs[i]['sfen'])
+        board.set_psfen(psva[i]['sfen'])
         make_input_features(board, input_features[0][j], input_features[1][j])
         #1000局面貯まったら推論
         if j == 999:
@@ -77,9 +78,9 @@ while a != 80:
 
     #評価値をつける
     print("評価値追加中…")
-    for hcp, score in zip(hcps, scores):
-        hcp["score"] = value_to_eval(score)
+    for psv, score in zip(psvb, scores):
+        psv["score"] = value_to_eval(score)
 
-    hcps.tofile("psv" + str(a) + ".bin")
+    psvb.tofile("psv" + str(a) + ".bin")
     print("psv" + str(a) + ".bin作成完了")
     a += 1
