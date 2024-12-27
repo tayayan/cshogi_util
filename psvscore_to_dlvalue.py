@@ -10,8 +10,8 @@ enable_cuda = True
 enable_tensorrt = True
 
 input_features = [
-    np.empty((1024, FEATURES1_NUM, 9, 9), dtype=np.float32),
-    np.empty((1024, FEATURES2_NUM, 9, 9), dtype=np.float32),
+    np.empty((512, FEATURES1_NUM, 9, 9), dtype=np.float32),
+    np.empty((512, FEATURES2_NUM, 9, 9), dtype=np.float32),
 ]
 
 #局面
@@ -40,18 +40,23 @@ session = onnxruntime.InferenceSession(model_path, providers=enable_providers)
 
 #勝率を評価値にする
 def value_to_eval(value):
-    return int(-600 * np.log(1/value - 1))
+    if value == 1.0:
+        return 32000
+    if value == 0.0:
+        return -32000
+    else:
+        return int(-600 * np.log(1/value - 1))
 
 
-#PSV読み込み 1億局面×80回
+#PSV読み込み 1000万局面×800回
 a = 0
-while a != 80:
-    psva = np.fromfile("psv.bin", count=100000000, offset=100000000*a*40, dtype=PackedSfenValue)
+while a != 800:
+    psva = np.fromfile("psv.bin", count=10000000, offset=10000000*a*40, dtype=PackedSfenValue)
     psvb = np.zeros(len(psva), dtype=PackedSfenValue)
     scores = np.array([], dtype=np.float32)
 
     j = 0
-    for i in range(100000000):
+    for i in range(10000000):
         psvb[i]["sfen"] = psva[i]["sfen"]
         psvb[i]["move"] = psva[i]["move"]
         psvb[i]["gamePly"] = psva[i]["gamePly"]
@@ -59,8 +64,8 @@ while a != 80:
         
         board.set_psfen(psva[i]['sfen'])
         make_input_features(board, input_features[0][j], input_features[1][j])
-        #1000局面貯まったら推論
-        if j == 999:
+        #500局面貯まったら推論
+        if j == 499:
             io_binding = session.io_binding()
             io_binding.bind_cpu_input("input1", input_features[0][:j + 1])
             io_binding.bind_cpu_input("input2", input_features[1][:j + 1])
@@ -73,7 +78,7 @@ while a != 80:
             j = 0
         else:
             j += 1
-        if i % 1000000 == 0:
+        if (i + 1) % 1000000 == 0:
             print(str(i)+"局面処理")
 
     #評価値をつける
