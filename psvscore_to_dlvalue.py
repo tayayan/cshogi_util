@@ -42,7 +42,7 @@ session = onnxruntime.InferenceSession(model_path, providers=enable_providers)
 def value_to_eval(value):
     if value == 1.0:
         return 32000
-    if value == 0.0:
+    elif value == 0.0:
         return -32000
     else:
         return int(-600 * np.log(1/value - 1))
@@ -51,18 +51,12 @@ def value_to_eval(value):
 #PSV読み込み 1000万局面×800回
 a = 0
 while a != 800:
-    psva = np.fromfile("psv.bin", count=10000000, offset=10000000*a*40, dtype=PackedSfenValue)
-    psvb = np.zeros(len(psva), dtype=PackedSfenValue)
+    psvs = np.fromfile("psv.bin", count=10000000, offset=10000000*a*40, dtype=PackedSfenValue)
     scores = np.array([], dtype=np.float32)
 
     j = 0
     for i in range(10000000):
-        psvb[i]["sfen"] = psva[i]["sfen"]
-        psvb[i]["move"] = psva[i]["move"]
-        psvb[i]["gamePly"] = psva[i]["gamePly"]
-        psvb[i]["game_result"] = psva[i]["game_result"]
-        
-        board.set_psfen(psva[i]['sfen'])
+        board.set_psfen(psvs[i]['sfen'])
         make_input_features(board, input_features[0][j], input_features[1][j])
         #500局面貯まったら推論
         if j == 499:
@@ -83,9 +77,9 @@ while a != 800:
 
     #評価値をつける
     print("評価値追加中…")
-    for psv, score in zip(psvb, scores):
+    for psv, score in zip(psvs, scores):
         psv["score"] = value_to_eval(score)
 
-    psvb.tofile("psv" + str(a) + ".bin")
+    psvs.tofile("psv" + str(a) + ".bin")
     print("psv" + str(a) + ".bin作成完了")
     a += 1
