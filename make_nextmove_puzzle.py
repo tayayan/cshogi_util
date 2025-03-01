@@ -122,9 +122,9 @@ usi("MultiPV 2")
 usi("isready")
 
 rfile = open(input("sfenファイルのパスを入力"),"r")
-readline = "aaaa"
+sfenline = "aaaa"
 
-while readline != "":
+while sfenline != "":
     sfenline = rfile.readline()
     movelist = sfenline.split()[2:]
     for move in movelist:
