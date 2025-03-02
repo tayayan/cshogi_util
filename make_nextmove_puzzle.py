@@ -129,7 +129,7 @@ while sfenline != "":
     movelist = sfenline.split()[2:]
     for move in movelist:
         board.push_usi(move)
-        if board.is_game_over():
+        if board.is_game_over() or board.is_nyugyoku():
             break
         rate1, rate2, bestmove = sfen_to_winrate(board.sfen())
         policydict = player.move_infer_choice(board)
