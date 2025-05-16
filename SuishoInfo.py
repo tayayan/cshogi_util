@@ -7,22 +7,54 @@ import onnxruntime
 import threading
 import subprocess
 import tkinter as tk
+import os
 
 # License: GPLv3 https://www.gnu.org/licenses/gpl-3.0.html
 
 # モデルファイル
 modelfile = "model.onnx"
 # エンジン
-shogiengine = "YO.exe"
+shogiengine = "Suisho5.exe"
 
 #エンジン名・フォント・文字色・背景色
-engine = "水匠電竜"         # エンジン名：水匠5
+engine = "水匠5"         # エンジン名：水匠
+player1 = "先手"
+player2 = "後手"
 barfont = "BIZ UDGothic"    # フォント：BIZ UDGothic
 bgcolor = "#1E2022"         # 背景色：white
 fgcolor = "#DDDDDD"         # 文字色：black
 turnfgcolor = "#f0e9a8"     # 手番の色：#00007f
 leftgraphbg = "#aa0000"     # 左グラフの色：#aa0000
 rightgraphbg = '#ffff7f'    # 右グラフの色：#ffff7f
+
+def load_options(filepath: str = "info_options.txt") -> None:
+    """
+    filepath で指定したテキスト（key = value 形式）を読み込み、
+    同名のグローバル変数があれば値を文字列として上書きする。
+    ・先頭が # の行と空行は無視
+    ・値の前後にある余分な空白や引用符 ' " は取り除く
+    """
+    if not os.path.exists(filepath):
+        return                     # ファイルが無ければ既定値のまま
+
+    with open(filepath, encoding="utf-8") as f:
+        for raw in f:
+            line = raw.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, val = map(str.strip, line.split("=", 1))
+
+            # 両端に " や ' が付いていれば外す
+            if (val.startswith('"') and val.endswith('"')) or \
+               (val.startswith("'") and val.endswith("'")):
+                val = val[1:-1]
+
+            # 既に定義済みのグローバル変数だけを上書き
+            if key in globals():
+                globals()[key] = val
+
+# 起動時に一度だけ読んで反映
+load_options()
 
 # 局面情報
 board = Board()
@@ -33,7 +65,8 @@ player = None
 #外部エンジン起動        
 shogi = subprocess.Popen(shogiengine, stdin=subprocess.PIPE,
                                       stdout=subprocess.PIPE,
-                                      encoding="UTF-8")
+                                      encoding="cp932",
+                                      errors = "ignore")
 
 class OnnxPolicyPlayer:
     # セッション初期化
@@ -165,13 +198,18 @@ def shogibar(line):
         #左右反転チェックを受け取る
         if bln.get():
             reverse = -1
+            ltebanlabel["text"] = player2
+            rtebanlabel["text"] = player1
         else:
             reverse = 1
         #データ処理
         turn = -(board.turn * 2 - 1) * reverse
         move_count = board.move_number
         depth = int(sfen[sfen.index("depth")+1])
-        nodes = int(sfen[sfen.index("nodes")+1])
+        if "nodes" in sfen:
+            nodes = int(sfen[sfen.index("nodes")+1])
+        else:
+            nodes = 1
         if nodes < 10000:
             nodes = str(nodes) + "局面"
         elif nodes < 100000000:
@@ -195,7 +233,13 @@ def shogibar(line):
             elif mate < 0:
                 lwinratelabel["text"] = "0%(" + str(mate) + "手詰)"
                 rwinratelabel["text"] = "(" + str(-mate) + "手詰)100%"
-                leftgraph.place(x = 50, y = 40, width = 0, height = 20)            
+                leftgraph.place(x = 50, y = 40, width = 0, height = 20)
+        if turn == 1:
+            lturnlabel["text"] = "▶"
+            rturnlabel["text"] = ""
+        else:
+            rturnlabel["text"] = "◀"
+            lturnlabel["text"] = ""
         saizen["text"] = engine + " " + str(move_count) + "手目検討中：最善手" + KI2.move_to_ki2(board.move_from_usi(pv), board)
         tansaku["text"] = "探索深度：" + str(depth) + "手 探索局面数：" + nodes
     
@@ -228,6 +272,7 @@ root.minsize(width=1600, height=330)
 root.title("SuishoInfo")
 root.configure(bg = bgcolor)
 
+
 #勝率ラベル
 lwinratelabel = tk.Label(root, text="50%(0)", font=(barfont, 25), bg=bgcolor, fg=fgcolor)
 lwinratelabel.place(x = 50, y = 20, anchor=tk.W)
@@ -235,10 +280,14 @@ rwinratelabel = tk.Label(root, text="(0)50%", font=(barfont, 25), bg=bgcolor, fg
 rwinratelabel.place(x = 1550, y = 20, anchor=tk.E)
 
 #手番ラベル
-ltebanlabel = tk.Label(root, text="先手", font=(barfont, 25), bg=bgcolor, fg=turnfgcolor)
+ltebanlabel = tk.Label(root, text=player1, font=(barfont, 25), bg=bgcolor, fg=turnfgcolor)
 ltebanlabel.place(x = 50, y = 80, anchor=tk.W)
-rtebanlabel = tk.Label(root, text="後手", font=(barfont, 25), bg=bgcolor, fg=turnfgcolor)
+rtebanlabel = tk.Label(root, text=player2, font=(barfont, 25), bg=bgcolor, fg=turnfgcolor)
 rtebanlabel.place(x=1550, y=80, anchor=tk.E)
+lturnlabel = tk.Label(root, text="▶", font=(barfont, 25), bg=bgcolor, fg=turnfgcolor)
+lturnlabel.place(x = 25, y = 80, anchor=tk.W)
+rturnlabel = tk.Label(root, text="◀", font=(barfont, 25), bg=bgcolor, fg=turnfgcolor)
+rturnlabel.place(x=1575, y=80, anchor=tk.E)
 
 #最善手ラベル
 saizen = tk.Label(root, text=engine + " 0手目検討中：最善手", font=(barfont, 20), bg=bgcolor, fg="#ffd1cc")
@@ -259,15 +308,15 @@ leftgraph = tk.Label(root, text="", bg=leftgraphbg, relief=tk.SOLID, bd=3)
 leftgraph.place(x = 50, y = 40, width = 750, height = 20)
 
 #推定選択率
-suiteibg = tk.Label(root, text="", bg="white")
+suiteibg = tk.Label(root, text="", bg=bgcolor)
 suiteibg.place(x = 10, y = 115, width = 350, height = 230)
-suitei = tk.Label(root, text="推定選択率上位", justify="left", font=(barfont, 18), bg="white", fg="black")
+suitei = tk.Label(root, text="推定選択率上位", justify="left", font=(barfont, 18), bg=bgcolor, fg=fgcolor)
 suitei.place(x=30, y=120, anchor=tk.NW)
 
 #左右反転チェック
 bln = tk.BooleanVar()
 bln.set(False)
-check = tk.Checkbutton(root, variable=bln, text="Reverse", font=(barfont, 15), bg=bgcolor, fg=fgcolor, activeforeground = fgcolor)
-check.place(x = 50, y = 350)
+check = tk.Checkbutton(root, variable=bln, text="Reverse", font=(barfont, 15), bg=bgcolor, fg=fgcolor, selectcolor=bgcolor, activeforeground = fgcolor)
+check.place(x = 500, y = 280)
 
 root.mainloop()
