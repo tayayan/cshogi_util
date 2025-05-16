@@ -23,6 +23,8 @@ player2 = "後手"
 barfont = "BIZ UDGothic"    # フォント：BIZ UDGothic
 bgcolor = "#1E2022"         # 背景色：white
 fgcolor = "#DDDDDD"         # 文字色：black
+fgcolor2 = "#ffd1cc"
+fgcolor3 = "#cce6ff"
 turnfgcolor = "#f0e9a8"     # 手番の色：#00007f
 leftgraphbg = "#aa0000"     # 左グラフの色：#aa0000
 rightgraphbg = '#ffff7f'    # 右グラフの色：#ffff7f
@@ -290,11 +292,11 @@ rturnlabel = tk.Label(root, text="◀", font=(barfont, 25), bg=bgcolor, fg=turnf
 rturnlabel.place(x=1575, y=80, anchor=tk.E)
 
 #最善手ラベル
-saizen = tk.Label(root, text=engine + " 0手目検討中：最善手", font=(barfont, 20), bg=bgcolor, fg="#ffd1cc")
+saizen = tk.Label(root, text=engine + " 0手目検討中：最善手", font=(barfont, 20), bg=bgcolor, fg=fgcolor2)
 saizen.place(x = 797, y = 18, anchor=tk.CENTER)
 
 #探索ラベル
-tansaku = tk.Label(root, text="探索深度：0手 探索局面数：0局面", font=(barfont, 20), bg=bgcolor, fg="#cce6ff")
+tansaku = tk.Label(root, text="探索深度：0手 探索局面数：0局面", font=(barfont, 20), bg=bgcolor, fg=fgcolor3)
 tansaku.place(x=797, y=82, anchor=tk.CENTER)
 
 #勝率目盛り
