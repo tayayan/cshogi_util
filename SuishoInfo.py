@@ -204,6 +204,8 @@ def shogibar(line):
             rtebanlabel["text"] = player1
         else:
             reverse = 1
+            ltebanlabel["text"] = player1
+            rtebanlabel["text"] = player2
         #データ処理
         turn = -(board.turn * 2 - 1) * reverse
         move_count = board.move_number
