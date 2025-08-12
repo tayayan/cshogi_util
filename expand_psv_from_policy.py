@@ -90,7 +90,8 @@ def main():
 
     # 16個のプロセスを持つプールを作成
     with multiprocessing.Pool(16) as pool:
-        a = 90200
+        a = 0
+        #76億2000万局面を処理
         while a != 762000:
             psvs = np.fromfile("oldpsv.bin", count=10000, offset=10000*a*40, dtype=PackedSfenValue)
             if psvs.size == 0:
